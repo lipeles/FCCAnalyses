@@ -786,7 +786,6 @@ AnalysisFCChh::merge_pairs(ROOT::VecOps::RVec<RecoParticlePair> pairs) {
     pair_particle.momentum.y = pair_tlv.Py();
     pair_particle.momentum.z = pair_tlv.Pz();
     pair_particle.mass = pair_tlv.M();
-
     merged_pairs.push_back(pair_particle);
   }
 
@@ -1191,11 +1190,11 @@ ROOT::VecOps::RVec<RecoParticlePair> AnalysisFCChh::getBestOSPair(
 
   // from Clement's main code: use std::sort on the mass difference
   auto resonancesort = [&](RecoParticlePair i, RecoParticlePair j) {
-    return (abs(Z_mass - i.merged_TLV().M()) <
-            abs(Z_mass - j.merged_TLV().M()));
+    return (fabs(Z_mass - i.merged_TLV().M()) <
+            fabs(Z_mass - j.merged_TLV().M()));
   };
   // auto resonancesort = [&] (edm4hep::ReconstructedParticleData i
-  // ,edm4hep::ReconstructedParticleData j) { return (abs( Z_mass
+  // ,edm4hep::ReconstructedParticleData j) { return (fabs( Z_mass
   // -i.mass)<abs(Z_mass-j.mass)); };
   std::sort(all_pairs.begin(), all_pairs.end(), resonancesort);
 
@@ -1243,7 +1242,7 @@ ROOT::VecOps::RVec<RecoParticlePair> AnalysisFCChh::getLeadingPair(
 
   // take the combined pT to sort
   auto pTll_sort = [&](RecoParticlePair i, RecoParticlePair j) {
-    return (abs(i.merged_TLV().Pt()) > abs(j.merged_TLV().Pt()));
+    return (fabs(i.merged_TLV().Pt()) > fabs(j.merged_TLV().Pt()));
   };
   std::sort(all_pairs.begin(), all_pairs.end(), pTll_sort);
 
@@ -1283,7 +1282,6 @@ ROOT::VecOps::RVec<RecoParticlePair> AnalysisFCChh::getDFOSPairs(
         RecoParticlePair DFOS_pair;
         DFOS_pair.particle_1 = elec;
         DFOS_pair.particle_2 = muon;
-
         DFOS_pairs.push_back(DFOS_pair);
       }
     }
@@ -1351,7 +1349,6 @@ ROOT::VecOps::RVec<RecoParticlePair> AnalysisFCChh::getPairs(
     RecoParticlePair pair;
     pair.particle_1 = particles_in.at(0);
     pair.particle_2 = particles_in.at(1);
-
     pairs.push_back(pair);
   }
 
@@ -1452,7 +1449,7 @@ ROOT::VecOps::RVec<float> AnalysisFCChh::get_mT(
   vec_pT_met.SetXYZ(MET.momentum.x, MET.momentum.y, 0.);
 
   float mT = sqrt(2. * pT_ll * pT_met *
-                  (1 - cos(abs(vec_pT_ll.DeltaPhi(vec_pT_met)))));
+                  (1 - cos(fabs(vec_pT_ll.DeltaPhi(vec_pT_met)))));
 
   mT_vector.push_back(mT);
 
@@ -1555,6 +1552,9 @@ ROOT::VecOps::RVec<float> AnalysisFCChh::get_mT_pseudo(
 
   return m_pseudo_vector;
 }
+
+
+
 
 // try the stransverse mass as defined in arXiv:1411.4312
 // ROOT::VecOps::RVec<float>
@@ -2079,7 +2079,7 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> AnalysisFCChh::build_HZZ(
 ROOT::VecOps::RVec<float> AnalysisFCChh::get_angularDist(
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_1,
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_2,
-    TString type) {
+    TString angtype) {
 
   ROOT::VecOps::RVec<float> out_vector;
 
@@ -2095,33 +2095,39 @@ ROOT::VecOps::RVec<float> AnalysisFCChh::get_angularDist(
   TLorentzVector tlv_1 = getTLV_reco(particle_1.at(0));
   TLorentzVector tlv_2 = getTLV_reco(particle_2.at(0));
 
-  if (type.Contains("dR")) {
+  if (angtype.Contains("dR")) {
     out_vector.push_back(tlv_1.DeltaR(tlv_2));
   }
 
-  else if (type.Contains("dEta")) {
-    out_vector.push_back(abs(tlv_1.Eta() - tlv_2.Eta()));
+  else if (angtype.Contains("dEta")) {
+    out_vector.push_back(fabs(tlv_1.Eta() - tlv_2.Eta()));
   }
 
-  else if (type.Contains("dPhi")) {
+  else if (angtype.Contains("dPhi")) {
     out_vector.push_back(tlv_1.DeltaPhi(tlv_2));
+  }
+
+  else if (angtype.Contains("dPhiAbs")) {
+    out_vector.push_back(fabs(tlv_1.DeltaPhi(tlv_2)));
   }
 
   else {
     std::cout
-        << " Error in AnalysisFCChh::get_angularDist - requested unknown type "
-        << type << "Returning default of -999." << std::endl;
+        << " Error in AnalysisFCChh::get_angularDist - requested unknown angtype "
+        << angtype << ", Returning default of -999." << std::endl;
     out_vector.push_back(-999.);
   }
 
   return out_vector;
 }
 
+
+
 // get angular distances between MET and an object:
 ROOT::VecOps::RVec<float> AnalysisFCChh::get_angularDist_MET(
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_1,
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj,
-    TString type) {
+    TString angtype) {
 
   ROOT::VecOps::RVec<float> out_vector;
 
@@ -2137,33 +2143,40 @@ ROOT::VecOps::RVec<float> AnalysisFCChh::get_angularDist_MET(
   TLorentzVector tlv_1 = getTLV_reco(particle_1.at(0));
   TLorentzVector tlv_2 = getTLV_MET(MET_obj.at(0));
 
-  if (type.Contains("dR")) {
+  if (angtype.Contains("dR")) {
     out_vector.push_back(tlv_1.DeltaR(tlv_2));
   }
 
-  else if (type.Contains("dEta")) {
-    out_vector.push_back(abs(tlv_1.Eta() - tlv_2.Eta()));
+  else if (angtype.Contains("dEta")) {
+    out_vector.push_back(fabs(tlv_1.Eta() - tlv_2.Eta()));
   }
 
-  else if (type.Contains("dPhi")) {
+  else if (angtype.Contains("dPhi")) {
     out_vector.push_back(tlv_1.DeltaPhi(tlv_2));
+  }
+
+  else if (angtype.Contains("dPhiAbs")) {
+    out_vector.push_back(fabs(tlv_1.DeltaPhi(tlv_2)));
   }
 
   else {
     std::cout
-        << " Error in AnalysisFCChh::get_angularDist - requested unknown type "
-        << type << "Returning default of -999." << std::endl;
+        << " Error in AnalysisFCChh::get_angularDist - requested unknown angtype "
+        << angtype << "Returning default of -999." << std::endl;
     out_vector.push_back(-999.);
   }
 
   return out_vector;
 }
 
+
+
+
 // get angular distances between the two particles in a pair:
 ROOT::VecOps::RVec<float>
 AnalysisFCChh::get_angularDist_pair(ROOT::VecOps::RVec<RecoParticlePair> pairs,
-                                    TString type) {
-
+                                    TString angtype) {
+  
   ROOT::VecOps::RVec<float> out_vector;
 
   // if input pairs is empty, fill default value
@@ -2178,27 +2191,32 @@ AnalysisFCChh::get_angularDist_pair(ROOT::VecOps::RVec<RecoParticlePair> pairs,
   TLorentzVector tlv_1 = getTLV_reco(pairs.at(0).particle_1);
   TLorentzVector tlv_2 = getTLV_reco(pairs.at(0).particle_2);
 
-  if (type.Contains("dR")) {
+  if (angtype.Contains("dR")) {
     out_vector.push_back(tlv_1.DeltaR(tlv_2));
   }
 
-  else if (type.Contains("dEta")) {
-    out_vector.push_back(abs(tlv_1.Eta() - tlv_2.Eta()));
+  else if (angtype.Contains("dEta")) {
+    out_vector.push_back(fabs(tlv_1.Eta() - tlv_2.Eta()));
   }
 
-  else if (type.Contains("dPhi")) {
+  else if (angtype.Contains("dPhi")) {
     out_vector.push_back(tlv_1.DeltaPhi(tlv_2));
+  }
+  
+  else if (angtype.Contains("dPhiAbs")) {
+    out_vector.push_back(fabs(tlv_1.DeltaPhi(tlv_2)));
   }
 
   else {
     std::cout
-        << " Error in AnalysisFCChh::get_angularDist - requested unknown type "
-        << type << "Returning default of -999." << std::endl;
+        << " Error in AnalysisFCChh::get_angularDist - requested unknown angtype "
+        << angtype << "Returning default of -999." << std::endl;
     out_vector.push_back(-999.);
   }
 
   return out_vector;
 }
+
 
 // get angular distances between the two particles in a pair: MC particles
 ROOT::VecOps::RVec<float>
@@ -2224,7 +2242,7 @@ AnalysisFCChh::get_angularDist_pair(ROOT::VecOps::RVec<MCParticlePair> pairs,
   }
 
   else if (type.Contains("dEta")) {
-    out_vector.push_back(abs(tlv_1.Eta() - tlv_2.Eta()));
+    out_vector.push_back(fabs(tlv_1.Eta() - tlv_2.Eta()));
   }
 
   else if (type.Contains("dPhi")) {
@@ -2381,7 +2399,7 @@ ROOT::VecOps::RVec<int> AnalysisFCChh::getTruthLepLepFlavour(
 
   if (leps_from_tau.size() != 2) {
     std::cout
-        << "Error - running getTruthLepLepFlavour on event which doesn't have "
+        << "Error - running getTruthLepLepFlavour on event which doesn't have " 
            "exactly two leptons from taus. This isnt the intended usage."
         << std::endl;
     return results_vec;
@@ -3093,12 +3111,12 @@ AnalysisFCChh::find_mc_matched_particle(
         float dR_val_old = reco_part_tlv.DeltaR(getTLV_MC(out_vector.at(0)));
 
         float pT_diff_old =
-            abs(reco_part_tlv.Pt() - getTLV_MC(out_vector.at(0)).Pt());
+            fabs(reco_part_tlv.Pt() - getTLV_MC(out_vector.at(0)).Pt());
 
         if (dR_val < dR_val_old) {
           out_vector.at(0) = check_mc_part;
 
-          if (pT_diff_old < abs(reco_part_tlv.Pt() - check_mc_part_tlv.Pt())) {
+          if (pT_diff_old < fabs(reco_part_tlv.Pt() - check_mc_part_tlv.Pt())) {
             std::cout << "Found case where closest in pT is not closest in dR"
                       << std::endl;
           }
@@ -3144,13 +3162,13 @@ AnalysisFCChh::find_reco_matched_particle(
         float dR_val_old = truth_part_tlv.DeltaR(getTLV_reco(out_vector.at(0)));
 
         float pT_diff_old =
-            abs(truth_part_tlv.Pt() - getTLV_reco(out_vector.at(0)).Pt());
+            fabs(truth_part_tlv.Pt() - getTLV_reco(out_vector.at(0)).Pt());
 
         if (dR_val < dR_val_old) {
           out_vector.at(0) = check_reco_part;
 
           if (pT_diff_old <
-              abs(truth_part_tlv.Pt() - check_reco_part_tlv.Pt())) {
+              fabs(truth_part_tlv.Pt() - check_reco_part_tlv.Pt())) {
             std::cout << "Found case where closest in pT is not closest in dR"
                       << std::endl;
           }
@@ -3199,13 +3217,13 @@ ROOT::VecOps::RVec<int> AnalysisFCChh::find_reco_matched_index(
         float dR_val_old = truth_part_tlv.DeltaR(getTLV_reco(match_old));
 
         float pT_diff_old =
-            abs(truth_part_tlv.Pt() - getTLV_reco(match_old).Pt());
+            fabs(truth_part_tlv.Pt() - getTLV_reco(match_old).Pt());
 
         if (dR_val < dR_val_old) {
           out_vector.at(0) = i;
 
           if (pT_diff_old <
-              abs(truth_part_tlv.Pt() - check_reco_part_tlv.Pt())) {
+              fabs(truth_part_tlv.Pt() - check_reco_part_tlv.Pt())) {
             std::cout << "Found case where closest in pT is not closest in dR"
                       << std::endl;
           }
@@ -3575,3 +3593,207 @@ ROOT::VecOps::RVec<int> AnalysisFCChh::find_truth_to_reco_matches_indices(
 // 	return out_vector;
 
 // }
+
+
+//
+//  vbf hww analysis variables
+//
+
+// transverse mass - ll+MET using ll-mass
+ROOT::VecOps::RVec<float> AnalysisFCChh::get_mT_hww(
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> ll_pair,
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj) {
+
+  ROOT::VecOps::RVec<float> m_pseudo_vector;
+
+  // if one of the input particles is empty, just fill a default value of -999
+  // as mT
+  if (ll_pair.size() < 1 || MET_obj.size() < 1) {
+    m_pseudo_vector.push_back(-999.);
+    return m_pseudo_vector;
+  }
+
+  TLorentzVector tlv_ll = getTLV_reco(ll_pair.at(0));
+  TLorentzVector tlv_MET = getTLV_MET(MET_obj.at(0));
+
+  TLorentzVector tlv_ll_no_z;
+  TLorentzVector tlv_vv;
+  tlv_ll_no_z.SetXYZM(tlv_ll.X(),tlv_ll.Y(),0.0,tlv_ll.M());
+  tlv_vv.SetXYZM(tlv_MET.X(),tlv_MET.Y(),0.0,tlv_ll.M());
+
+  TLorentzVector tlv_H_pseudo = tlv_ll_no_z+tlv_vv;
+
+  m_pseudo_vector.push_back(tlv_H_pseudo.M());
+
+  return m_pseudo_vector;
+}
+
+ROOT::VecOps::RVec<float>
+AnalysisFCChh::get_lepton_centrality(ROOT::VecOps::RVec<RecoParticlePair> llpairs,ROOT::VecOps::RVec<RecoParticlePair> jjpairs)
+{
+  ROOT::VecOps::RVec<float> out_vector;
+
+  // if input pairs is empty, fill default value
+  if ((llpairs.size() < 1)||(jjpairs.size() < 1)) {
+    out_vector.push_back(-999.);
+    return out_vector;
+  }
+
+  // else, for now, just take the first of each, should be the "best" one (by
+  // user input) - flexibility to use all combinations is there, to be
+  // implemented if needed
+  TLorentzVector l1 = getTLV_reco(llpairs.at(0).particle_1);
+  TLorentzVector l2 = getTLV_reco(llpairs.at(0).particle_2);
+  TLorentzVector j1 = getTLV_reco(jjpairs.at(0).particle_1);
+  TLorentzVector j2 = getTLV_reco(jjpairs.at(0).particle_2);
+
+  float deta = j2.Eta() - j1.Eta();
+  float eta_bar = (j1.Eta() + j2.Eta())/2.0;
+  float olv1 = fabs((l1.Eta() - eta_bar)/deta);
+  float olv2 = fabs((l2.Eta() - eta_bar)/deta);
+
+  out_vector.push_back(olv1+olv2);
+  return out_vector;
+
+}
+
+int AnalysisFCChh::get_ntrk(edm4hep::TrackCollection& in) {
+    return in.size();
+}
+
+
+
+
+
+ROOT::VecOps::RVec<float> AnalysisFCChh::get_m_tautau_colinear(
+    ROOT::VecOps::RVec<RecoParticlePair> llpair,
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj) 
+{
+
+  ROOT::VecOps::RVec<float> output;
+
+  // if one of the input particles is empty, just fill a default value of -999
+  if (llpair.size() < 1 || MET_obj.size() < 1) {
+    output.push_back(-999.);
+    return output;
+  }
+
+  TLorentzVector tlv_l1 = getTLV_reco(llpair.at(0).particle_1);
+  TLorentzVector tlv_l2 = getTLV_reco(llpair.at(0).particle_2);
+  TLorentzVector tlv_MET = getTLV_MET(MET_obj.at(0));
+
+  TVector2 l1 = tlv_l1.Vect().XYvector();
+  TVector2 l2 = tlv_l2.Vect().XYvector();
+  TVector2 met = tlv_MET.Vect().XYvector();
+  
+  double x1 = ( ((l2*l2)*(l1*met)) - ((l1*l2)*(l2*met)) )/( ((l1*l1)*(l2*l2)) - ((l1*l2)*(l1*l2)) );
+  double x2 = ( ((l1*l1)*(l2*met)) - ((l1*l2)*(l1*met)) )/( ((l1*l1)*(l2*l2)) - ((l1*l2)*(l1*l2)) );
+
+  // std::cout << "X-check " << met.Px() << "," << met.Py() 
+  // << " " << l1.Px() << "," << l1.Py() 
+  // << " " << l2.Px() << "," << l2.Py()
+  // << " l1*l2="   << l1*l2 
+  // << " " << x1 << "," << x2   
+  // << " " << (x1*l1+x2*l2).Px() << ","  <<  (x1*l1+x2*l2).Py() << std::endl;
+
+  double m_tautau = ((1+x1)*tlv_l1 + (1+x2)*tlv_l2).M();
+
+  output.push_back(m_tautau);
+
+  return output;
+}
+
+// Return number of associated tracks
+ROOT::VecOps::RVec<int> AnalysisFCChh::get_nAssociatedTracks( ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in ) {
+  ROOT::VecOps::RVec<int> result ;
+  result.reserve( in.size() );
+  
+  for (auto & p: in) {
+    result.push_back(p.tracks_end-p.tracks_begin);
+  }
+  return result ;
+
+}
+
+
+
+
+  // Return vector of track eta values
+  ROOT::VecOps::RVec<float> AnalysisFCChh::get_etaTrack( ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in ) {
+    
+    ROOT::VecOps::RVec<float> result ;
+    result.reserve( in.size() );
+    
+    for (auto & p: in) {
+      TLorentzVector tlv = getTLV_reco(p);
+      if (p.tracks_end!=p.tracks_begin)
+        result.push_back(tlv.Eta());
+    }
+    return result ;
+}
+
+int AnalysisFCChh::get_ntrk_vbf_centeral(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> tracks, 
+                                     ROOT::VecOps::RVec<RecoParticlePair> llpairs,
+                                     ROOT::VecOps::RVec<RecoParticlePair> jjpairs,
+                                     float pTCut, float etaGap)
+ {
+
+   // if input pairs is empty, fill default value
+   if ((llpairs.size() < 1)||(jjpairs.size() < 1)) {
+     return 0;
+   }
+
+  // else, for now, just take the first of each, should be the "best" one (by
+  // user input) - flexibility to use all combinations is there, to be
+  // implemented if needed
+  TLorentzVector l1 = getTLV_reco(llpairs.at(0).particle_1);
+  TLorentzVector l2 = getTLV_reco(llpairs.at(0).particle_2);
+  TLorentzVector j1 = getTLV_reco(jjpairs.at(0).particle_1);
+  TLorentzVector j2 = getTLV_reco(jjpairs.at(0).particle_2);
+
+  double upperEtaBound = std::max(j1.Eta(),j2.Eta()) - etaGap;
+  double lowerEtaBound = std::min(j1.Eta(),j2.Eta()) + etaGap;
+
+  int cnt = 0;
+  for (auto & trkp: tracks) {
+    TLorentzVector trkv = getTLV_reco(trkp);
+
+    // no track
+    if(trkp.tracks_end==trkp.tracks_begin) continue;
+
+    // apply pT cut
+    if (trkv.Pt() < pTCut) continue;
+
+    // make sure it doesn't match a lepton
+    if (trkv.DeltaR(l1) < 0.01) continue;
+    if (trkv.DeltaR(l2) < 0.01) continue;
+
+    // make sure it's between the gets
+    if (trkv.Eta() < lowerEtaBound) continue;
+    if (trkv.Eta() > upperEtaBound) continue;
+
+    cnt++;
+  }
+        
+   return cnt;
+ }
+                                  
+// make all combinations of pairs
+ROOT::VecOps::RVec<RecoParticlePair> AnalysisFCChh::getAllPairs(
+  ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> partlist1,
+  ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> partlist2) {
+
+  ROOT::VecOps::RVec<RecoParticlePair> pairs;
+
+  for (auto& part1 : partlist1) {
+    for (auto& part2 : partlist2) {
+      RecoParticlePair pair;
+      pair.particle_1 = part1;
+      pair.particle_2 = part2;
+      pairs.push_back(pair);
+    }
+  }
+
+  return pairs;
+
+}

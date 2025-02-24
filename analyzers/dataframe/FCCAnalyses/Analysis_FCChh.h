@@ -9,6 +9,9 @@
 #include "TString.h"
 
 #include "edm4hep/MCParticleData.h"
+#include "edm4hep/TrackData.h"
+#include "edm4hep/TrackCollection.h"
+#include "edm4hep/Track.h"
 #include "edm4hep/ParticleIDData.h"
 #include "edm4hep/ReconstructedParticleData.h"
 #include "podio/ObjectID.h"
@@ -264,11 +267,11 @@ TLorentzVector getTLV_MET(edm4hep::ReconstructedParticleData met_object);
 ROOT::VecOps::RVec<float> get_angularDist(
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_1,
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_2,
-    TString type = "dR");
+    TString angtype = "dR");
 ROOT::VecOps::RVec<float> get_angularDist_MET(
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> particle_1,
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj,
-    TString type = "dR");
+    TString angtype = "dR");
 
 ROOT::VecOps::RVec<float>
 get_angularDist_pair(ROOT::VecOps::RVec<RecoParticlePair> pairs,
@@ -484,6 +487,41 @@ ROOT::VecOps::RVec<T> get(const ROOT::VecOps::RVec<int> &index,
   }
   return result;
 }
+
+
+// vbf hww analysis variables
+//int get_ntrk(ROOT::VecOps::RVec<edm4hep::TrackData> in);
+int get_ntrk(edm4hep::TrackCollection& in);
+
+
+ROOT::VecOps::RVec<float> get_mT_hww(
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> ll_pair,
+     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj);
+
+ROOT::VecOps::RVec<float> get_lepton_centrality(
+    ROOT::VecOps::RVec<RecoParticlePair> llpairs,
+    ROOT::VecOps::RVec<RecoParticlePair> jjpairs);
+
+ROOT::VecOps::RVec<float> get_m_tautau_colinear(
+    ROOT::VecOps::RVec<RecoParticlePair> llpair,
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> MET_obj);
+
+// Return number of associated tracks
+ROOT::VecOps::RVec<int> get_nAssociatedTracks( ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in ) ;
+
+// Return vector of track eta values
+ROOT::VecOps::RVec<float> get_etaTrack( ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in ) ;
+
+int get_ntrk_vbf_centeral(
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> tracks, 
+    ROOT::VecOps::RVec<RecoParticlePair> llpairs,
+    ROOT::VecOps::RVec<RecoParticlePair> jjpairs,
+    float pTCut, float etaGap);
+
+
+ROOT::VecOps::RVec<RecoParticlePair> getAllPairs(
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> partlist1,
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> partlist2);
 
 } // namespace AnalysisFCChh
 

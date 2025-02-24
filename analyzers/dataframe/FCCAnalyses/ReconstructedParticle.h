@@ -169,6 +169,8 @@ namespace ReconstructedParticle{
 
   /// get number of b-jets
   int getJet_ntags(ROOT::VecOps::RVec<bool> in);
+
+
 }//end NS ReconstructedParticle
 
 }//end NS FCCAnalyses
