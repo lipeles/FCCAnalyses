@@ -3,7 +3,7 @@ Analysis for FCC-hh VBF H->WW
 author Elliot Lipeles (lipeles@sas.upenn.edu)
 '''
 from argparse import ArgumentParser
-import vbf_hww.analysis_config as analysis_config
+import examples.FCChh.vbf_hww.analysis_config as analysis_config
 
 # Mandatory: Analysis class where the user defines the operations on the
 # dataframe.
@@ -25,7 +25,8 @@ class Analysis():
         self.process_list = analysis_config.process_list
         self.input_dir = analysis_config.input_dir
         self.output_dir = analysis_config.stage1_output
-                
+        self.output_dir_eos = analysis_config.stage1_output
+
         # Optional: analysisName, default is ''
         self.analysis_name = 'FCC-hh VBF HWW analysis'
 
@@ -33,7 +34,7 @@ class Analysis():
         # self.n_threads = 4
 
         # Optional: running on HTCondor, default is False
-        self.run_batch = True
+        self.run_batch = analysis_config.batch
         
         # Optional: Use weighted events
         self.do_weighted = True 
@@ -108,24 +109,19 @@ class Analysis():
             .Define("mu2_eta",  "FCCAnalyses::ReconstructedParticle::get_eta(sel_mu)[1]")
             .Define("mu2_phi",  "FCCAnalyses::ReconstructedParticle::get_phi(sel_mu)[1]")
 
-            # # H(yy) if it exists, if there are no 2 selected photons, doesnt get filled 
-            #.Define("el_pairs_unmerged", "AnalysisFCChh::getPairs(sel_el)") # retrieves the leading pT pair of all possible 
-            #.Define("el_pairs", "AnalysisFCChh::merge_pairs(el_pairs_unmerged)") # merge pair into one object to access inv masses etc
-            #.Define("m_ee", "FCCAnalyses::ReconstructedParticle::get_mass(el_pairs)")
             
-            #.Define("mu_pairs_unmerged", "AnalysisFCChh::getPairs(sel_mu)") # retrieves the leading pT pair of all possible 
-            #.Define("mu_pairs", "AnalysisFCChh::merge_pairs(mu_pairs_unmerged)") # merge pair into one object to access inv masses etc
-            #.Define("m_mm", "FCCAnalyses::ReconstructedParticle::get_mass(mu_pairs)")
-
             .Define("em_pairs_unmerged", "AnalysisFCChh::getDFOSPairs(sel_el,sel_mu)")
             .Define("em_pairs", "AnalysisFCChh::merge_pairs(em_pairs_unmerged)") # merge pair into one object to access inv masses etc
-            .Define("m_em", "FCCAnalyses::ReconstructedParticle::get_mass(em_pairs)")
+            .Define("m_em", "FCCAnalyses::ReconstructedParticle::get_mass(em_pairs)[0]")
+            .Define("pt_em",  "FCCAnalyses::ReconstructedParticle::get_pt(em_pairs)[0]")
+
 
             #EVENTWIDE VARIABLES: Access quantities that exist only once per event, such as the missing transverse energy
             .Define("MET", "FCCAnalyses::ReconstructedParticle::get_pt(MissingET)") #absolute value of MET
             .Define("MET_x", "FCCAnalyses::ReconstructedParticle::get_px(MissingET)") #x-component of MET
             .Define("MET_y", "FCCAnalyses::ReconstructedParticle::get_py(MissingET)") #y-component of MET
             .Define("MET_phi", "FCCAnalyses::ReconstructedParticle::get_phi(MissingET)") #angle of MET
+            .Define("ptllOverMet", "pt_em/MET")
 
             # ########################################### JETS ########################################### 
 
@@ -142,16 +138,17 @@ class Analysis():
             .Define("centraljets", "FCCAnalyses::ReconstructedParticle::sel_eta(2.5)(selected_jets)")
             .Define("n_centraljets",   "FCCAnalyses::ReconstructedParticle::get_n(centraljets)")
 
-           #.Define("trackstates", "ReconstructedParticle2Track::getRP2TRK(ReconstructedParticles,EFlowTrack)") 
-           # .Define("centraltrks", "FCCAnalyses::ReconstructedParticle::sel_eta(2.5)(selected_trks)")
-           # .Define("n_centraltrks", "FCCAnalyses::ReconstructedParticle::get_n(centraltrks)")
-           .Define("n_RecoTracks","AnalysisFCChh::get_ntrk(EFlowTrack)")
             
-
             .Define("jj_pairs_unmerged", "AnalysisFCChh::getPairs(sel_jets)") # retrieves the leading pT pair of all possible 
             .Define("jj_pairs", "AnalysisFCChh::merge_pairs(jj_pairs_unmerged)") # merge pair into one object to access inv masses etc
             .Define("m_jj", "FCCAnalyses::ReconstructedParticle::get_mass(jj_pairs)")
             .Define("pt_jj", "FCCAnalyses::ReconstructedParticle::get_pt(jj_pairs)")
+
+            .Define("sel_leps","FCCAnalyses::ReconstructedParticle::merge(sel_el,sel_mu)")
+            .Define("lj_pairs_unmerged", "AnalysisFCChh::getAllPairs(sel_leps,sel_jets)") 
+            .Define("lj_pairs", "AnalysisFCChh::merge_pairs(lj_pairs_unmerged)") 
+            .Define("m_lj","FCCAnalyses::ReconstructedParticle::get_mass(lj_pairs)")
+            
 
             # HWW identification
             .Define("dphi_em", 'AnalysisFCChh::get_angularDist_pair(em_pairs_unmerged,"dPhiAbs")')
@@ -161,6 +158,13 @@ class Analysis():
             .Define("dphi_emMET", 'AnalysisFCChh::get_angularDist_MET(em_pairs,MissingET,"dPhiAbs")')
             .Define("lep_cent", "AnalysisFCChh::get_lepton_centrality(em_pairs_unmerged,jj_pairs_unmerged)")
             .Define("MT", "AnalysisFCChh::get_mT_hww(em_pairs,MissingET)")
+            .Define("mtautau", "AnalysisFCChh::get_m_tautau_colinear(em_pairs_unmerged,MissingET)")
+
+            .Define("n_RecoTracks","AnalysisFCChh::get_nAssociatedTracks(ReconstructedParticles)")
+            .Define("track_eta","AnalysisFCChh::get_etaTrack(ReconstructedParticles)")
+            .Define("n_central_trks1","AnalysisFCChh::get_ntrk_vbf_centeral(ReconstructedParticles,em_pairs_unmerged,jj_pairs_unmerged,1.0,0.8)")
+            .Define("n_central_trks2","AnalysisFCChh::get_ntrk_vbf_centeral(ReconstructedParticles,em_pairs_unmerged,jj_pairs_unmerged,2.0,0.8)")
+            .Define("n_central_trks4","AnalysisFCChh::get_ntrk_vbf_centeral(ReconstructedParticles,em_pairs_unmerged,jj_pairs_unmerged,4.0,0.8)")
 
 
             # b-tagged jets at medium working point
@@ -174,10 +178,10 @@ class Analysis():
             .Define("b_tagged_jets_loose", "AnalysisFCChh::get_tagged_jets(Jet, Jet_HF_tags, _Jet_HF_tags_particle, _Jet_HF_tags_parameters, 0)") 
             .Define("selpt_bjets_loose", "FCCAnalyses::ReconstructedParticle::sel_pt(20.)(b_tagged_jets_loose)")
             .Define("sel_bjets_loose_unsort", "FCCAnalyses::ReconstructedParticle::sel_eta(4)(selpt_bjets_loose)")
-            .Define("sel_bjets_loose", "AnalysisFCChh::SortParticleCollection(sel_bjets_unsort)") #sort by pT
+            .Define("sel_bjets_loose", "AnalysisFCChh::SortParticleCollection(sel_bjets_loose_unsort)") #sort by pT
             .Define("n_bjets_loose", "FCCAnalyses::ReconstructedParticle::get_n(sel_bjets_loose)")
            
-
+            .Define("jets_genmatched_b", "AnalysisFCChh::find_reco_matches(genb, sel_jets, 0.4)")
 
             # ########################################### APPLY PRE-SELECTION ########################################### 
             # # require at least electrons and two jets
@@ -200,13 +204,13 @@ class Analysis():
             'weight',
             'n_el', 'el1_pt', 'el1_eta', 'el1_phi', 'el2_pt', 'el2_eta', 'el2_phi',
             'n_mu', 'mu1_pt', 'mu1_eta', 'mu1_phi', 'mu2_pt', 'mu2_eta', 'mu2_phi',
-            'm_em', 'dphi_em',  'deta_em',  
-            'MET', 'MET_x', 'MET_y', 'MET_phi',
+            'm_em', 'pt_em', 'dphi_em',  'deta_em',  
+            'MET', 'MET_x', 'MET_y', 'MET_phi', 'ptllOverMet'
             'n_jets', 'n_bjets', 'n_bjets_loose' , 'n_centraljets', 
-            'n_RecoTracks',
+            'n_RecoTracks', 'track_eta', 'n_central_trks1','n_central_trks2','n_central_trks4',
             'j1_pt', 'j1_eta', 'j1_phi', 'j2_pt', 'j2_eta', 'j2_phi',
             'm_jj', 'dphi_jj',  'deta_jj',  'pt_jj',
-            'MT', 'lep_cent', 'dphi_emMET',
+            'MT', 'lep_cent', 'dphi_emMET', 'm_lj', 'mtautau',
             'n_genWp' , 'n_genWm' , 'n_genZ'   , 'n_genb'  , 'genb_pt', 'genb_eta'       
         ]
         return branch_list

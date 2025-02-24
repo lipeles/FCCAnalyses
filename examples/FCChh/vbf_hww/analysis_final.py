@@ -1,5 +1,5 @@
-import vbf_hww.analysis_config as analysis_config
-
+import examples.FCChh.vbf_hww.analysis_config as analysis_config
+import sys
 
 #Input directory where the files produced at the pre-selection level are
 #inputDir  = "outputs/FCChh/vbf_hww/presel_condor/"
@@ -8,9 +8,15 @@ inputDir = analysis_config.stage1_output
 #Input directory where the files produced at the pre-selection level are
 outputDir  = analysis_config.final_output
 
+print("analysis_config.process_list =",analysis_config.process_list)
+
 processList = {}
 for proc in analysis_config.process_list:
-    processList[proc] : {}
+    print(proc)
+    processList[proc] = {}
+
+print("processList =",processList)
+#sys.exit(-1)
 
 #Link to the dictonary that contains all the cross section informations etc...
 #procDict = "/eos/experiment/fcc/hh/tutorials/edm4hep_tutorial_data/FCChh_procDict_tutorial.json"
@@ -63,23 +69,25 @@ cutList['sel0_all']='1.0'
 cutList['sel1_bjeteveto']='n_bjets_loose==0'
 cutList['sel2_jeteveto']='n_jets==2'
 cutList['sel3_both']=cutList['sel1_bjeteveto'] + ' && ' + cutList['sel2_jeteveto']
-cutList['sel4_mjj']=cutList['sel3_both']+ '&& (m_jj[0]>1000.0)&&(deta_jj[0]>4.5)'
-cutList['sel5_mem']=cutList['sel3_both']+ '&&(m_em[0]<70.0)'            
-cutList['sel6_mjj_dphiem_lepcent']= cutList['sel4_mjj']+ ' && (dphi_em[0]<0.75) && (lep_cent[0]<0.40)'
-cutList['sel7_mjj_dphiem_lepcent_mt']= cutList['sel6_mjj_dphiem_lepcent']+ ' && (MT[0]<150.0) && (MT[0]>50.0) '
+cutList['sel4_mtautau']=cutList['sel3_both'] + ' && ((mtautau[0] < 70.0)||(mtautau[0] > 100.0))' 
+cutList['sel5_mjj']=cutList['sel4_mtautau']+ '&& (m_jj[0]>1000.0)&&(deta_jj[0]>4.5)'
+cutList['sel6_mem']=cutList['sel4_mtautau']+ '&&(m_em[0]<70.0)'            
+cutList['sel7_mjj_dphiem_lepcent']= cutList['sel5_mjj']+ ' && (dphi_em[0]<0.75) && (lep_cent[0]<0.40)'
+cutList['sel8_mjj_dphiem_lepcent_mt']= cutList['sel7_mjj_dphiem_lepcent']+ ' && (MT[0]<150.0) && (MT[0]>50.0) '
+cutList['sel9_mlj']= cutList['sel7_mjj_dphiem_lepcent']+ ' && (m_lj[0] > 200.0)'
+cutList['sel10_mjj2']= cutList['sel7_mjj_dphiem_lepcent']+ ' && (m_jj[0] > 2000.0)'
 
 
 # Dictionary for the output variable/histograms. The key is the name of the variable in the output files. "name" is the name of the variable in the input file, "title" is the x-axis label of the histogram, "bin" the number of bins of the histogram, "xmin" the minimum x-axis value and "xmax" the maximum x-axis value.
 histoList = {
-    #"n_el" : {"title":"Number Electrons","bin":10,"xmin":0,"xmax":10},
-    #"n_mu" : {"title":"Number Muons","bin":10,"xmin":0,"xmax":10},
-    #"n_lep" : {"title":"Number Leptons","bin":10,"xmin":0,"xmax":10},
     "n_jets" : {"title":"Number Jets","bin":10,"xmin":0,"xmax":10},
     'n_centraljets'  : {"title":"Number Centeral Jets","bin":10,"xmin":0,"xmax":10},
     "n_bjets" : {"title":"Number b-Jets","bin":10,"xmin":0,"xmax":10},
-    "n_bjets_loose" : {"title":"Number Jets","bin":10,"xmin":0,"xmax":10},
-    "n_genb" : {"title":"Number Jets","bin":10,"xmin":0,"xmax":10},
-    'n_RecoTracks'  : {"title":"Number Tracks","bin":100,"xmin":0,"xmax":1000},
+    "n_bjets_loose" : {"title":"Number b-Jets loose","bin":10,"xmin":0,"xmax":10},
+    "n_genb" : {"title":"Number Gen b-Jets","bin":10,"xmin":0,"xmax":10},
+    'n_RecoTracks'  : {"title":"Number Tracks","bin":100,"xmin":0,"xmax":10},
+    'track_eta'  : {"title":"#eta of tracks","bin":120,"xmin":-6,"xmax":6},
+    'n_central_trks'  : {"title":"Number Central Tracks","bin":50,"xmin":0,"xmax":250},
     "genb_eta" : {"title":"Generator Level b-quark Eta","bin":100,"xmin":-10,"xmax":10},
     "genb_pt" : {"title":"Generator Level b-quark Pt","bin":100,"xmin":0,"xmax":500},
     "j1_eta" : {"title":"Leading Jet Eta","bin":100,"xmin":-10,"xmax":10},
@@ -91,13 +99,15 @@ histoList = {
     "mu1_pt" : {"title":"Leading Muon pT","bin":40,"xmin":0,"xmax":200},
     "MET" : {"title":"MET","bin":40,"xmin":0,"xmax":1000},
     "m_em":{"title":"m_{#ell#mu} [GeV]","bin":60,"xmin":0,"xmax":300},
-    'MT' : {"title":"MT [GeV]","bin":30,"xmin":0,"xmax":300},
+    "m_lj":{"title":"m_{#ell j} [GeV]","bin":100,"xmin":0,"xmax":1000},
+    "mtautau":{"title":"m_{#tau#tau} collinear [GeV]","bin":200,"xmin":0,"xmax":1000},
+    'MT' : {"title":"MT [GeV]","bin":50,"xmin":0,"xmax":500},
     'lep_cent' : {"title":"lepton centrality","bin":60,"xmin":0,"xmax":3},
     "m_jj":{"title":"m_{jj} [GeV]","bin":40,"xmin":0,"xmax":10000},
-    "dphi_jj":{"title":"#delta#phi_{jj} ","bin":30,"xmin":0,"xmax":3.1416},
-    "deta_jj":{"title":"#delta#eta_{jj} ","bin":120,"xmin":0,"xmax":12.0},
-    "dphi_em":{"title":"#delta#phi_{e#mu} ","bin":30,"xmin":0,"xmax":3.1416},
-    "deta_em":{"title":"#delta#eta_{e#mu} ","bin":12,"xmin":0,"xmax":12.0},
+    "dphi_jj":{"title":"#Delta#phi_{jj} ","bin":30,"xmin":0,"xmax":3.1416},
+    "deta_jj":{"title":"#Delta#eta_{jj} ","bin":120,"xmin":0,"xmax":12.0},
+    "dphi_em":{"title":"#Delta#phi_{e#mu} ","bin":30,"xmin":0,"xmax":3.1416},
+    "deta_em":{"title":"#Delta#eta_{e#mu} ","bin":12,"xmin":0,"xmax":12.0},
     'dphi_emMET' : {"title":"#delta#phi(em,MET)","bin":30,"xmin":0,"xmax":3.1415},
     "n_genW" : {"title": "N generator W","bin":10, "xmin":0,"xmax":10},
     "n_genZ" : {"title": "N generator Z","bin":10, "xmin":0,"xmax":10},

@@ -1,6 +1,6 @@
 import ROOT
-from analysis_final import histoList
-import vbf_hww.analysis_config as analysis_config
+from examples.FCChh.vbf_hww.analysis_final import histoList,cutList
+import examples.FCChh.vbf_hww.analysis_config as analysis_config
 
 # global parameters
 intLumi        = 30e+06 #in pb-1
@@ -24,15 +24,16 @@ variables = histoList.keys()
 ### Dictionary with the analysis name as a key, and the list of selections to be plotted for this analysis. The name of the selections should be the same than in the final selection
 
 extralabel = {}
-extralabel['sel0_all'] = "Preselection Events"
-extralabel['sel1_bjeteveto'] = "b-jet veto"
-extralabel['sel2_jeteveto'] = "2-jet exclusive"
-extralabel['sel3_both'] = "2-jet exclusive and b-jet veto"
-extralabel['sel4_mjj'] = "mjj cut applied"
-extralabel['sel5_mem'] = "m_em cut applied"
-extralabel['sel6_mjj_dphiem_lepcent'] = "m_{jj}, #Delta#eta_{jj}, #Delta#phi_{em}, lep cent"
-extralabel['sel7_mjj_dphiem_lepcent_mt'] = extralabel['sel6_mjj_dphiem_lepcent'] + ", MT"
-
+# extralabel['sel0_all'] = "Preselection Events"
+# extralabel['sel1_bjeteveto'] = "b-jet veto"
+# extralabel['sel2_jeteveto'] = "2-jet exclusive"
+# extralabel['sel3_both'] = "2-jet exclusive and b-jet veto"
+# extralabel['sel4_mtautau'] = "Z#rightarrow#tau#tau veto"
+# extralabel['sel5_mjj'] = "mjj cut applied"
+# extralabel['sel6_mem'] = "m_em cut applied"
+# extralabel['sel7_mjj_dphiem_lepcent'] = "m_{jj}, #Delta#eta_{jj}, #Delta#phi_{em}, lep cent"
+# extralabel['sel8_mjj_dphiem_lepcent_mt'] = extralabel['sel7_mjj_dphiem_lepcent'] + ", MT"
+extralabel = cutList
 
 selections = {}
 selections['vbf_hww']   = extralabel.keys()
@@ -40,6 +41,7 @@ selections['vbf_hww']   = extralabel.keys()
 
 colors = {}
 colors['vbf_hww'] = ROOT.kRed
+colors['vbf_ww'] = ROOT.kOrange
 colors['ggH'] = ROOT.kTeal
 colors['ttbar'] = ROOT.kBlue
 colors['z_tautau'] = ROOT.kViolet
@@ -56,6 +58,7 @@ plots['vbf_hww']['backgrounds']={}
 
 procs = {}
 procs['vbf_hww_llvv'] = ['signal','vbf_hww']
+procs['mgp8_pp_vbf_ww_lvlv_5f_noHiggs_100TeV'] = ['signal','vbf_ww']
 procs['mgp8_pp_vbf_h01j_5f_hwwlvlv'] = ['signal','vbf_hww']
 procs['ggh_hww_llvv'] = ['backgrounds','ggH']
 procs['ttbar_lep'] = ['backgrounds','ttbar']
@@ -71,9 +74,11 @@ for proc in analysis_config.process_list:
         plots['vbf_hww'][proc_config[0]][proc_config[1]]=[]
     plots['vbf_hww'][proc_config[0]][proc_config[1]].append(proc)
 
+print(plots)
 
 legend = {}
 legend['vbf_hww'] = 'VBF H #rightarrow WW'
+legend['vbf_ww'] = 'VBF  WW (no Higgs)'
 legend['ggH'] = 'gg #rightarrow H #rightarrow WW'
 legend['ttbar'] = 't#bar{t}'
 legend['z_tautau'] = 'Z #rightarrow #tau#tau'
